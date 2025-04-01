@@ -22,7 +22,7 @@ class Calculadora
     public function dividir($a, $b)
     {
         if ($b == 0) {
-            throw new \InvalidArgumentException("Divisão por zero não é permitida.");
+            throw new \InvalidArgumentException("Divisão por zero nãfdo é permitida.");
         }
         return $a / $b;
     }
