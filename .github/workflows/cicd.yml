@@ -24,6 +24,10 @@ jobs:
         with:
           php-version: '8.2'
           coverage: xdebug
+          tools: phpunit, pcov
+
+      - name: Verify Xdebug
+        run: php -v && php -m | grep xdebug || echo "Xdebug NÃO ENCONTRADO!"
 
       - name: Install dependencies
         run: composer install --no-progress --no-suggest --prefer-dist
@@ -31,7 +35,7 @@ jobs:
       - name: Run PHPUnit with coverage
         run: |
           mkdir -p build/logs
-          vendor/bin/phpunit --coverage-clover=build/logs/coverage.xml || true
+          vendor/bin/phpunit --coverage-clover=build/logs/coverage.xml
 
       - name: Debug Coverage Report
         run: |
@@ -56,14 +60,4 @@ jobs:
             -Dsonar.pullrequest.branch=${{ github.head_ref }}
             -Dsonar.pullrequest.base=${{ github.base_ref }}
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
-
-      - name: Comment on PR with SonarCloud Report
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: |
-            📊 **SonarCloud Report**
-            - 🔍 **New Issues:** ${{ steps.sonarcloud.outputs.new_issues }}
-            - 🛡 **Security Hotspots:** ${{ steps.sonarcloud.outputs.security_hotspots }}
-            - 📈 **Coverage:** ${{ steps.sonarcloud.outputs.coverage }}
-            - 🌀 **Duplication:** ${{ steps.sonarcloud.outputs.duplication }}
-          GITHUB_TOKEN: ${{ secrets.DEV }}
+            -Dsonar.verbose=true
