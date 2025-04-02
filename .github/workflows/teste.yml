@@ -71,4 +71,6 @@ jobs:
             🔴 **Testes falhados**: `${{ env.FAILED_TESTS }}`
             📈 **Cobertura de código**: `${{ env.COVERAGE_PERCENT }}%`
             🔗 [Ver relatório completo no Codecov](https://app.codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})
-          GITHUB_TOKEN: ${{ secrets.GITHUB_DEV}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_DEV }}
+
