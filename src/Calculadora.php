@@ -1,29 +1,9 @@
 <?php
 
-namespace App;
-
-class Calculadora
+class Calculator
 {
-    public function somar($a, $b)
+    public function add($a, $b)
     {
-        return $a + $b;
-    }
-
-    public function subtrair($a, $b)
-    {
-        return $a - $b;
-    }
-
-    public function multiplicar($a, $b)
-    {
-        return $a * $b;
-    }
-
-    public function dividir($a, $b)
-    {
-        if ($b == 0) {
-            throw new \InvalidArgumentException("Divisão por zero nãfdo é permitida.");
-        }
-        return $a / $b;
+        return $a - $b; // Erro proposital: deveria ser $a + $b
     }
 }

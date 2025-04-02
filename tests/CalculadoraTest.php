@@ -1,19 +1,15 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use App\Calculadora;
 
-class CalculadoraTest extends TestCase
+require_once __DIR__ . '/../src/Calculator.php';
+
+class CalculatorTest extends TestCase
 {
-    public function testSomar()
+    public function testAddition()
     {
-        $calc = new Calculadora();
-        $this->assertEquals(5, $calc->somar(2, 3));
-    }
-
-    public function testSubtrair()
-    {
-        $calc = new Calculadora();
-        $this->assertEquals(1, $calc->subtrair(3, 2));
+        $calculator = new Calculator();
+        $result = $calculator->add(2, 3);
+        $this->assertEquals(5, $result); // Esse teste falhará porque 2 - 3 não é 5
     }
 }
