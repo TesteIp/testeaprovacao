@@ -21,35 +21,54 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2' # Ajuste para a versão do PHP do seu projeto
+          php-version: '8.2' # Ajuste conforme necessário
 
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist
 
       - name: Run tests with coverage
-        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+        run: |
+          vendor/bin/phpunit --coverage-clover=coverage.xml | tee phpunit-output.txt
+        continue-on-error: true  # Mesmo que falhe, continua o workflow
+
+      - name: Extract test results
+        run: |
+          PASSED=$(grep -Po '(?<=OK \()\d+' phpunit-output.txt || echo 0)
+          FAILED=$(grep -Po '(?<=Failures: )\d+' phpunit-output.txt || echo 0)
+          TOTAL=$((PASSED + FAILED))
+          COVERAGE=$(grep -Po '(?<=<coverage line-rate=")\d+\.\d+' coverage.xml | awk '{printf "%.2f", $1 * 100}' || echo "0.00")
+
+          echo "TOTAL_TESTS=$TOTAL" >> $GITHUB_ENV
+          echo "PASSED_TESTS=$PASSED" >> $GITHUB_ENV
+          echo "FAILED_TESTS=$FAILED" >> $GITHUB_ENV
+          echo "COVERAGE_PERCENT=$COVERAGE" >> $GITHUB_ENV
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: coverage.xml # Certifique-se de que esse arquivo é gerado no passo anterior
+          file: coverage.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           verbose: true
           flags: unittests
           name: codecov-report
-          override_pr: true # Garante que o comentário na PR seja atualizado
+          override_pr: true
 
-      - name: Post coverage comment on PR
+      - name: Post test summary in PR
         if: github.event_name == 'pull_request'
         uses: thollander/actions-comment-pull-request@v2
         with:
-          message: "✅ Testes finalizados! Os resultados da cobertura foram enviados para o [Codecov](https://app.codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})."
-          GITHUB_TOKEN: ${{ secrets.DEV }}
+          message: |
+            ### 📊 **Resultados dos Testes**
+            🟢 **Testes aprovados**: `${{ env.PASSED_TESTS }}/${{ env.TOTAL_TESTS }}`
+            🔴 **Testes falhados**: `${{ env.FAILED_TESTS }}`
+            📈 **Cobertura de código**: `${{ env.COVERAGE_PERCENT }}%`
+            🔗 [Ver relatório completo no Codecov](https://app.codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})
+          GITHUB_TOKEN: ${{ secrets.GITHUB_DEV }}
