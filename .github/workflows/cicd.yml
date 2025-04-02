@@ -1,63 +1,156 @@
-name: SonarCloud Analysis
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
-      - dev
   pull_request:
     branches:
       - main
-      - dev
 
 jobs:
-  sonarcloud:
-    name: SonarCloud Scan
+  build:
+    name: Continuous Integration
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          coverage: xdebug
-          tools: phpunit, pcov
-
-      - name: Verify Xdebug
-        run: php -v && php -m | grep xdebug || echo "Xdebug NÃO ENCONTRADO!"
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Install dependencies
-        run: composer install --no-progress --no-suggest --prefer-dist
+        run: composer install
 
-      - name: Run PHPUnit with coverage
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: composer install --no-dev --prefer-dist
+
+      - name: Run Security Check
         run: |
-          mkdir -p build/logs
-          vendor/bin/phpunit --coverage-clover=build/logs/coverage.xml
+          curl -Ls https://github.com/fabpot/local-php-security-checker/releases/latest/download/local-php-security-checker_linux_amd64 -o local-php-security-checker
+          chmod +x local-php-security-checker
+          ./local-php-security-checker
 
-      - name: Debug Coverage Report
-        run: |
-          echo "Verificando se o arquivo coverage.xml foi gerado..."
-          ls -l build/logs/coverage.xml || echo "coverage.xml NÃO ENCONTRADO!"
-          cat build/logs/coverage.xml | head -n 20 || echo "coverage.xml está vazio!"
+  tests:
+    name: Run Tests
+    needs: build
+    runs-on: ubuntu-latest
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.DEV }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up PHP with Xdebug
+        uses: shivammathur/setup-php@v2
         with:
-          args: >
-            -Dsonar.organization=testeip
-            -Dsonar.projectKey=TesteIp_testeaprovacao
-            -Dsonar.host.url=https://sonarcloud.io
-            -Dsonar.sources=src
-            -Dsonar.exclusions=**/tests/**,**/vendor/**,**/node_modules/**
-            -Dsonar.language=php
-            -Dsonar.php.coverage.reportPaths=build/logs/coverage.xml
-            -Dsonar.pullrequest.branch=${{ github.head_ref }}
-            -Dsonar.pullrequest.base=${{ github.base_ref }}
-            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
-            -Dsonar.verbose=true
+          php-version: '8.0'
+          extensions: xdebug  
+
+      - name: Verificar se o Xdebug está ativo
+        run: php -m | grep xdebug || echo "Xdebug NÃO encontrado!"
+
+      - name: Verificar se os arquivos do código-fonte estão presentes
+        run: ls -lah src/ || echo "Diretório src/ não encontrado!"
+
+      - name: Run PHPUnit tests with coverage
+        run: |
+          vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml || echo "Erro ao executar PHPUnit!"
+      - name: Verificar se coverage.xml foi gerado
+        run: ls -lah coverage.xml || echo "coverage.xml NÃO foi gerado!"
+
+      - name: Extract coverage
+        id: coverage_check
+        run: |
+          if [ -f coverage.xml ]; then
+            COVERAGE=$(php -r "
+                libxml_use_internal_errors(true);
+                \$xml = simplexml_load_file('coverage.xml');
+                if (!\$xml || !isset(\$xml->project->metrics['coveredelements']) || !isset(\$xml->project->metrics['elements']) || \$xml->project->metrics['elements'] == 0) {
+                    echo '0';
+                } else {
+                    echo round((\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100, 2);
+                }
+            ")
+          else
+            COVERAGE=0
+          fi
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "Cobertura calculada: $COVERAGE%"
+          
+      - name: Parse junit.xml
+        id: parse_junit
+        run: |
+          TESTS=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) (\$xml ? \$xml->testsuite['tests'] : 0);
+          ")
+          FAILURES=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) (\$xml ? \$xml->testsuite['failures'] : 0);
+          ")
+          SKIPPED=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) (\$xml ? \$xml->testsuite['skipped'] : 0);
+          ")
+          TIME=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (float) (\$xml ? \$xml->testsuite['time'] : 0);
+          ")
+          echo "total_tests=$TESTS" >> $GITHUB_ENV
+          echo "failures=$FAILURES" >> $GITHUB_ENV
+          echo "skipped=$SKIPPED" >> $GITHUB_ENV
+          echo "execution_time=$TIME" >> $GITHUB_ENV
+
+      - name: Post test results
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          token: ${{ secrets.DEV }}
+          repository: ${{ github.repository }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### PHPUnit Test Coverage Report
+            - **Total Coverage:** ${{ env.COVERAGE }}%
+            - **Total Tests:** ${{ env.total_tests }}
+            - **Failures:** ${{ env.failures }}
+            - **Skipped:** ${{ env.skipped }}
+            - **Execution Time:** ${{ env.execution_time }} seconds
+
+      - name: Validate test failures
+        if: success() || failure()
+        run: |
+          if [ ${{ env.failures }} -gt 0 ]; then
+              echo "Existem falhas nos testes: ${{ env.failures }}"
+              exit 1
+          fi
+
+  cd:
+    name: Continuous Delivery
+    needs: [tests, security]
+    runs-on: ubuntu-latest
+    environment:
+      name: aprovação
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: docker build -t my-php-app .
+
+      - name: Docker login
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Tag and Push Docker image
+        run: |
+          docker tag my-php-app ${{ secrets.DOCKER_USERNAME }}/my-php-app:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-php-app:latest
