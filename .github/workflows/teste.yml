@@ -23,18 +23,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Baixar e instalar o SonarScanner
-        run: |
-          curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-          unzip sonar-scanner.zip
-          mv sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner
-
-      - name: Executar análise com SonarCloud
-        run: |
-          /opt/sonar-scanner/bin/sonar-scanner \
-            -Dsonar.organization="ip4y" \
-            -Dsonar.projectKey="testeaprovacao" \
-            -Dsonar.branch.name=main \
-            -Dsonar.sources=. \
-            -Dsonar.host.url="https://sonarcloud.io" \
-            -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
+      - name: Rodar análise no SonarCloud
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization="ip4y"
+            -Dsonar.projectKey="testeaprovacao"
+            -Dsonar.branch.name=main
+            -Dsonar.sources=.
+            -Dsonar.host.url="https://sonarcloud.io"
