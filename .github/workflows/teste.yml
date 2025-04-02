@@ -34,9 +34,9 @@ jobs:
       - name: ☁️ Enviar resultados para Codecov
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.DEV }} # Seu token DEV aqui
           files: coverage.xml
-          fail_ci_if_error: false  # Continua o pipeline mesmo se falhar
+          fail_ci_if_error: false
           verbose: true
           flags: unittests
           name: codecov-report
@@ -59,4 +59,4 @@ jobs:
 
           echo "$COMMENT" | gh pr comment ${{ github.event.pull_request.number }} --body -
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_DEV }}
+          GH_TOKEN: ${{ secrets.DEV }} # Usando o token DEV para autenticação
