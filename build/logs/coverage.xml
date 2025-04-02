@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1743617289">
+  <project timestamp="1743617289">
+    <file name="/home/joaovictor/teste/testeaprovacao/src/Calculadora.php">
+      <class name="App\Calculadora" namespace="global">
+        <metrics complexity="5" methods="4" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="2" elements="10" coveredelements="4"/>
+      </class>
+      <line num="7" type="method" name="somar" visibility="public" complexity="1" crap="1" count="1"/>
+      <line num="9" type="stmt" count="1"/>
+      <line num="12" type="method" name="subtrair" visibility="public" complexity="1" crap="1" count="1"/>
+      <line num="14" type="stmt" count="1"/>
+      <line num="17" type="method" name="multiplicar" visibility="public" complexity="1" crap="2" count="0"/>
+      <line num="19" type="stmt" count="0"/>
+      <line num="22" type="method" name="dividir" visibility="public" complexity="2" crap="6" count="0"/>
+      <line num="24" type="stmt" count="0"/>
+      <line num="25" type="stmt" count="0"/>
+      <line num="27" type="stmt" count="0"/>
+      <metrics loc="30" ncloc="30" classes="1" methods="4" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="2" elements="10" coveredelements="4"/>
+    </file>
+    <file name="/home/joaovictor/teste/testeaprovacao/src/index.php">
+      <line num="5" type="stmt" count="0"/>
+      <metrics loc="5" ncloc="3" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="1" coveredstatements="0" elements="1" coveredelements="0"/>
+    </file>
+    <metrics files="2" loc="35" ncloc="33" classes="1" methods="4" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="7" coveredstatements="2" elements="11" coveredelements="4"/>
+  </project>
+</coverage>
