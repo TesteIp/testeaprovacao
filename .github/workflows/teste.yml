@@ -62,4 +62,4 @@ jobs:
           
           gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_DEV }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_DEV}}
