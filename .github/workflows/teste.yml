@@ -15,52 +15,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout code
+      - name: ⬇️ Checkout do código
         uses: actions/checkout@v4
 
-      - name: 🛠️ Set up PHP
+      - name: 🛠️ Configurar PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-          coverage: phpdbg # Usa phpdbg para gerar cobertura
+          php-version: '8.2' # Ajuste conforme necessário
 
-      - name: 📦 Install dependencies
+      - name: 📦 Instalar dependências
         run: composer install --no-progress --prefer-dist
 
-      - name: 🧪 Run tests with coverage
-        id: phpunit
+      - name: 🏃 Executar testes com cobertura
         run: |
-          phpdbg -qrr vendor/bin/phpunit --testdox --coverage-clover=coverage.xml | tee test-results.txt
-        continue-on-error: true # Continua o workflow mesmo se os testes falharem
+          vendor/bin/phpunit --testdox --coverage-clover=coverage.xml | tee test-results.txt
+        continue-on-error: true  # Garante que o workflow continue mesmo se os testes falharem
 
-      - name: 📊 Upload test results to Codecov
-        if: always() # Sempre executa, mesmo se os testes falharem
+      - name: ☁️ Enviar resultados para Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
-          fail_ci_if_error: false
+          fail_ci_if_error: false  # Continua o pipeline mesmo se falhar
           verbose: true
           flags: unittests
           name: codecov-report
           override_pr: true
 
-      - name: 📝 Gerar comentário da PR com resultados dos testes
+      - name: 📝 Comentar resultado dos testes na PR
         if: github.event_name == 'pull_request'
         run: |
-            PASSED_TESTS=$(grep -c "✔" test-results.txt || echo "0")
-            FAILED_TESTS=$(grep -c "✘" test-results.txt || echo "0")
-            COVERAGE=$(grep -oP '(?<=lines-valid=")[0-9]+' coverage.xml || echo "0")
-            TOTAL_LINES=$(grep -oP '(?<=lines-covered=")[0-9]+' coverage.xml || echo "1")
-            PERCENT_COVERAGE=$((COVERAGE * 100 / TOTAL_LINES))
-            
-            COMMENT="### 📊 Resultados dos Testes
-            ✅ **Testes aprovados**: $PASSED_TESTS  
-            🔴 **Testes falhados**: $FAILED_TESTS  
-            📈 **Cobertura de código**: $PERCENT_COVERAGE%  
-            [🔗 Ver detalhes no Codecov](https://app.codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})"
-            
-            echo "$COMMENT" | gh pr comment ${{ github.event.pull_request.number }} --body -
-          env:
-            GH_TOKEN: ${{ secrets.GITHUB_DEV }}
-  
+          PASSED_TESTS=$(grep -c "✔" test-results.txt || echo "0")
+          FAILED_TESTS=$(grep -c "✘" test-results.txt || echo "0")
+          COVERAGE=$(grep -oP '(?<=lines-valid=")[0-9]+' coverage.xml || echo "0")
+          TOTAL_LINES=$(grep -oP '(?<=lines-covered=")[0-9]+' coverage.xml || echo "1")
+          PERCENT_COVERAGE=$((COVERAGE * 100 / TOTAL_LINES))
+
+          COMMENT="### 📊 Resultados dos Testes
+          ✅ **Testes aprovados**: $PASSED_TESTS  
+          🔴 **Testes falhados**: $FAILED_TESTS  
+          📈 **Cobertura de código**: $PERCENT_COVERAGE%  
+          [🔗 Ver detalhes no Codecov](https://app.codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})"
+
+          echo "$COMMENT" | gh pr comment ${{ github.event.pull_request.number }} --body -
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_DEV }}
