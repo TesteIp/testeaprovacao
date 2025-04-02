@@ -29,8 +29,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.organization= TesteIP
-            -Dsonar.projectKey= testeaprovacao
+            -Dsonar.organization=testeIP
+            -Dsonar.projectKey=testeaprovacao
             -Dsonar.branch.name=main
             -Dsonar.sources=.
             -Dsonar.host.url=https://sonarcloud.io
