@@ -31,19 +31,19 @@ jobs:
       - name: Run PHPUnit with coverage
         run: |
           mkdir -p build/logs
-          vendor/bin/phpunit --coverage-clover=build/logs/coverage.xml --log-junit=build/logs/junit.xml || true
+          vendor/bin/phpunit --coverage-clover=build/logs/coverage.xml || true
 
       - name: Debug Coverage Report
         run: |
-          echo "🔍 Verificando se coverage.xml foi gerado..."
-          ls -lah build/logs/coverage.xml || echo "❌ coverage.xml NÃO ENCONTRADO!"
-          cat build/logs/coverage.xml || echo "❌ coverage.xml está vazio ou não existe!"
+          echo "Verificando se o arquivo coverage.xml foi gerado..."
+          ls -l build/logs/coverage.xml || echo "coverage.xml NÃO ENCONTRADO!"
+          cat build/logs/coverage.xml | head -n 20 || echo "coverage.xml está vazio!"
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DEV }}
         with:
           args: >
             -Dsonar.organization=testeip
@@ -53,8 +53,17 @@ jobs:
             -Dsonar.exclusions=**/tests/**,**/vendor/**,**/node_modules/**
             -Dsonar.language=php
             -Dsonar.php.coverage.reportPaths=build/logs/coverage.xml
-            -Dsonar.coverage.exclusions=**/tests/**,**/vendor/**,**/node_modules/**
             -Dsonar.pullrequest.branch=${{ github.head_ref }}
             -Dsonar.pullrequest.base=${{ github.base_ref }}
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
 
+      - name: Comment on PR with SonarCloud Report
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            📊 **SonarCloud Report**
+            - 🔍 **New Issues:** ${{ steps.sonarcloud.outputs.new_issues }}
+            - 🛡 **Security Hotspots:** ${{ steps.sonarcloud.outputs.security_hotspots }}
+            - 📈 **Coverage:** ${{ steps.sonarcloud.outputs.coverage }}
+            - 🌀 **Duplication:** ${{ steps.sonarcloud.outputs.duplication }}
+          GITHUB_TOKEN: ${{ secrets.DEV }}
