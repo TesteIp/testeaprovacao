@@ -20,8 +20,9 @@ class Calculadora
     public function divide($a, $b)
     {
         if ($b == 0) {
-            throw new DivisionByZeroError("Divisão por zero não permitida.");
+            throw new DivisionByZeroError("Divisão podr zero não permitida.");
         }
         return $a / $b;
     }
 }
+
