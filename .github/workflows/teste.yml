@@ -4,14 +4,13 @@ on:
   push:
     branches:
       - main
-      - dev
   pull_request:
     branches:
       - main
-      - dev
 
 jobs:
-  sonarqube:
+  sonarcloud:
+    name: Analisar código com SonarCloud
     runs-on: ubuntu-latest
 
     steps:
@@ -24,23 +23,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Instalar SonarScanner
+      - name: Baixar e instalar o SonarScanner
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y unzip
-          wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+          curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
           unzip sonar-scanner.zip
-          sudo mv sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner
-          echo "export PATH=\$PATH:/opt/sonar-scanner/bin" >> ~/.bashrc
-          echo "export PATH=\$PATH:/opt/sonar-scanner/bin" >> ~/.profile
-          source ~/.bashrc
-          source ~/.profile
+          mv sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner
 
       - name: Executar análise com SonarCloud
         run: |
           /opt/sonar-scanner/bin/sonar-scanner \
-            -Dsonar.organization="TesteIP" \
+            -Dsonar.organization="ip4y" \
             -Dsonar.projectKey="testeaprovacao" \
+            -Dsonar.branch.name=main \
             -Dsonar.sources=. \
             -Dsonar.host.url="https://sonarcloud.io" \
             -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
