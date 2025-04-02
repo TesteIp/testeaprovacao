@@ -28,23 +28,34 @@ jobs:
       - name: Install dependencies
         run: composer install --no-progress --no-suggest --prefer-dist
 
+      - name: Enable Xdebug coverage mode
+        run: echo "xdebug.mode=coverage" >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini
+
       - name: Run PHPUnit with coverage
-        run: vendor/bin/phpunit --coverage-clover=coverage.xml || true
+        run: |
+          mkdir -p build/logs
+          XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover=build/logs/coverage.xml || true
+
+      - name: Debug Coverage Report
+        run: |
+          echo "Verificando se o arquivo coverage.xml foi gerado..."
+          ls -l build/logs/coverage.xml || echo "coverage.xml NÃO ENCONTRADO!"
+          cat build/logs/coverage.xml | head -n 20 || echo "coverage.xml está vazio!"
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.DEV }}  # Permite comentários na PR
+          GITHUB_TOKEN: ${{ secrets.DEV }}
         with:
           args: >
             -Dsonar.organization=testeip
             -Dsonar.projectKey=TesteIp_testeaprovacao
             -Dsonar.host.url=https://sonarcloud.io
-            -Dsonar.sources=.
+            -Dsonar.sources=src
             -Dsonar.exclusions=**/tests/**,**/vendor/**,**/node_modules/**
             -Dsonar.language=php
-            -Dsonar.php.coverage.reportPaths=coverage.xml
+            -Dsonar.php.coverage.reportPaths=build/logs/coverage.xml
             -Dsonar.pullrequest.branch=${{ github.head_ref }}
             -Dsonar.pullrequest.base=${{ github.base_ref }}
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
