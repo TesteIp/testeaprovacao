@@ -30,7 +30,7 @@ jobs:
         with:
           args: >
             -Dsonar.organization=TesteIP
-            -Dsonar.projectKey=testeaprovacao
+            -Dsonar.projectKey=testeip_testeaprovacao
             -Dsonar.branch.name=main
             -Dsonar.sources=.
             -Dsonar.host.url=https://sonarcloud.io
