@@ -43,4 +43,4 @@ jobs:
             -Dsonar.projectKey="SEU_PROJETO_NO_SONARCLOUD" \
             -Dsonar.sources=. \
             -Dsonar.host.url="https://sonarcloud.io" \
-            -Dsonar.login="${{ secrets.TESTE}}"
+            -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
