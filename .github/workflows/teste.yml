@@ -25,33 +25,32 @@ jobs:
           php-version: '8.2'
           coverage: xdebug
 
-      - name: Instalar e Configurar Xdebug
+      - name: Verificar se o Xdebug está instalado e ativo
         run: |
-          sudo apt-get update
-          sudo apt-get install -y php-xdebug
-          echo "zend_extension=$(find /usr/lib/php/ -name xdebug.so)" | sudo tee -a /etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/cli/php.ini
-          echo "xdebug.mode=coverage" | sudo tee -a /etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/cli/php.ini
           php -m | grep xdebug || echo "Xdebug NÃO foi carregado!"
+          php -v
 
-      - name: Install dependencies
+      - name: Instalar dependências
         run: composer install --no-progress --no-suggest --prefer-dist
 
-      - name: Run PHPUnit with coverage
+      - name: Ativar cobertura no Xdebug
+        run: echo "xdebug.mode=coverage" | sudo tee -a /etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/cli/conf.d/99-xdebug.ini
+
+      - name: Rodar PHPUnit com cobertura
         run: |
           mkdir -p build/logs
           XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover=build/logs/coverage.xml || true
-
-      - name: Debug Coverage Report
-        run: |
-          echo "Verificando se o arquivo coverage.xml foi gerado..."
-          ls -l build/logs/coverage.xml || echo "coverage.xml NÃO ENCONTRADO!"
+          ls -lah build/logs/
           cat build/logs/coverage.xml | head -n 20 || echo "coverage.xml está vazio!"
+
+      - name: Teste manual do PHPUnit
+        run: vendor/bin/phpunit --testdox --coverage-text
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.DEV }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: >
             -Dsonar.organization=testeip
