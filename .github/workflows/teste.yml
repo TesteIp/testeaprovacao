@@ -1,4 +1,4 @@
-name: SonarQube Analysis
+name: SonarCloud Analysis
 
 on:
   push:
@@ -18,24 +18,17 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Configurar Java (necessário para SonarScanner)
+      - name: Configurar Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Instalar SonarScanner
-        run: |
-          curl -sSLo sonarscanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-          unzip sonarscanner.zip
-          mv sonar-scanner-5.0.1.3006-linux sonar-scanner
-          echo "$(pwd)/sonar-scanner/bin" >> $GITHUB_PATH
-
-      - name: Executar análise SonarQube
+      - name: Executar análise com SonarCloud
         run: |
           sonar-scanner \
-            -Dsonar.projectKey=meu-projeto \
+            -Dsonar.organization="SUA_ORGANIZACAO_NO_SONARCLOUD" \
+            -Dsonar.projectKey="SEU_PROJETO_NO_SONARCLOUD" \
             -Dsonar.sources=. \
-            -Dsonar.host.url=https://meuservidor-sonarqube.com \
-            -Dsonar.login=${{ secrets.teste }}
-
+            -Dsonar.host.url="https://sonarcloud.io" \
+            -Dsonar.login="${{ secrets.TESTE }}"
