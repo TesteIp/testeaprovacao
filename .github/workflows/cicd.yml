@@ -1,0 +1,56 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  sonarcloud:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: xdebug
+
+      - name: Install dependencies
+        run: composer install --no-progress --no-suggest --prefer-dist
+
+      - name: Run PHPUnit with coverage
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml || true
+
+      - name: Debug Coverage Report
+        run: |
+          echo "Verificando se o arquivo coverage.xml foi gerado..."
+          ls -l coverage.xml || echo "coverage.xml NÃO ENCONTRADO!"
+          cat coverage.xml || echo "coverage.xml está vazio ou não existe!"
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=testeip
+            -Dsonar.projectKey=TesteIp_testeaprovacao
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.sources=.
+            -Dsonar.exclusions=**/tests/**,**/vendor/**,**/node_modules/**
+            -Dsonar.language=php
+            -Dsonar.php.coverage.reportPaths=coverage.xml
+            -Dsonar.pullrequest.branch=${{ github.head_ref }}
+            -Dsonar.pullrequest.base=${{ github.base_ref }}
+            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
