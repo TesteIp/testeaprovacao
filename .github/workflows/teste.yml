@@ -29,7 +29,7 @@ jobs:
       - name: 🏃 Executar testes com cobertura
         run: |
           vendor/bin/phpunit --testdox --coverage-clover=coverage.xml | tee test-results.txt
-        continue-on-error: true  # Garante que o workflow continue mesmo se os testes falharem
+        continue-on-error: true  # Continua mesmo que falhe
 
       - name: ☁️ Enviar resultados para Codecov
         uses: codecov/codecov-action@v4
@@ -47,16 +47,17 @@ jobs:
         run: |
           PASSED_TESTS=$(grep -c "✔" test-results.txt || echo "0")
           FAILED_TESTS=$(grep -c "✘" test-results.txt || echo "0")
-          COVERAGE=$(grep -oP '(?<=lines-valid=")[0-9]+' coverage.xml || echo "0")
-          TOTAL_LINES=$(grep -oP '(?<=lines-covered=")[0-9]+' coverage.xml || echo "1")
-          PERCENT_COVERAGE=$((COVERAGE * 100 / TOTAL_LINES))
+          COVERED_LINES=$(grep -oP '(?<=lines-covered=")[0-9]+' coverage.xml || echo "0")
+          TOTAL_LINES=$(grep -oP '(?<=lines-valid=")[0-9]+' coverage.xml || echo "1")
+          PERCENT_COVERAGE=$((COVERED_LINES * 100 / TOTAL_LINES))
 
-          COMMENT="### 📊 Resultados dos Testes
-          ✅ **Testes aprovados**: $PASSED_TESTS  
-          🔴 **Testes falhados**: $FAILED_TESTS  
-          📈 **Cobertura de código**: $PERCENT_COVERAGE%  
-          [🔗 Ver detalhes no Codecov](https://app.codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})"
+          COMMENT="### 📊 Resultados dos Testes\n\n"
+          COMMENT+="✅ **Testes aprovados**: $PASSED_TESTS\n"
+          COMMENT+="🔴 **Testes falhados**: $FAILED_TESTS\n"
+          COMMENT+="📈 **Cobertura de código**: $PERCENT_COVERAGE%\n"
+          COMMENT+="[🔗 Ver detalhes no Codecov](https://app.codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})"
 
-          echo "$COMMENT" | gh pr comment ${{ github.event.pull_request.number }} --body -
+          echo -e "$COMMENT" > comment.txt
+          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.txt
         env:
-          GH_TOKEN: ${{ secrets.DEV }} # Usando o token DEV para autenticação
+          GH_TOKEN: ${{ secrets.DEV }} # Usa o token DEV para autenticação
