@@ -31,20 +31,19 @@ jobs:
       - name: Run PHPUnit with coverage
         run: |
           mkdir -p build/logs
-          vendor/bin/phpunit --coverage-clover=build/logs/coverage.xml || true
+          vendor/bin/phpunit --coverage-clover=build/logs/coverage.xml --log-junit=build/logs/junit.xml || true
 
       - name: Debug Coverage Report
         run: |
           echo "🔍 Verificando se coverage.xml foi gerado..."
-          ls -l build/logs/coverage.xml || echo "❌ coverage.xml NÃO ENCONTRADO!"
+          ls -lah build/logs/coverage.xml || echo "❌ coverage.xml NÃO ENCONTRADO!"
           cat build/logs/coverage.xml || echo "❌ coverage.xml está vazio ou não existe!"
 
       - name: SonarCloud Scan
-        id: sonarcloud
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.DEV }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: >
             -Dsonar.organization=testeip
@@ -54,28 +53,8 @@ jobs:
             -Dsonar.exclusions=**/tests/**,**/vendor/**,**/node_modules/**
             -Dsonar.language=php
             -Dsonar.php.coverage.reportPaths=build/logs/coverage.xml
+            -Dsonar.coverage.exclusions=**/tests/**,**/vendor/**,**/node_modules/**
             -Dsonar.pullrequest.branch=${{ github.head_ref }}
             -Dsonar.pullrequest.base=${{ github.base_ref }}
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
 
-      - name: Extract Coverage Percentage
-        id: extract_coverage
-        run: |
-          COVERAGE=$(grep '<coverage' build/logs/coverage.xml | awk -F'"' '{print $2}' || echo "N/A")
-          echo "Cobertura extraída: $COVERAGE%"
-          echo "coverage=$COVERAGE" >> $GITHUB_ENV
-
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
-        run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          SONAR_URL="https://sonarcloud.io/dashboard?id=TesteIp_testeaprovacao"
-          COMMENT="🔍 **SonarCloud Analysis Results** 🔍  
-          - 📊 [Ver detalhes da análise](${SONAR_URL})  
-          - 📈 Cobertura: **${{ env.coverage }}%**  
-          - 🛠 Qualidade do código verificada pelo SonarCloud."
-
-          echo "$COMMENT" > sonar_comment.txt
-          gh pr comment $PR_NUMBER -F sonar_comment.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.DEV }}
