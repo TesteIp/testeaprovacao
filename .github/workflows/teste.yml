@@ -25,11 +25,16 @@ jobs:
           php-version: '8.2'
           coverage: xdebug
 
+      - name: Instalar e Configurar Xdebug
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php-xdebug
+          echo "zend_extension=$(find /usr/lib/php/ -name xdebug.so)" | sudo tee -a /etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/cli/php.ini
+          echo "xdebug.mode=coverage" | sudo tee -a /etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/cli/php.ini
+          php -m | grep xdebug || echo "Xdebug NÃO foi carregado!"
+
       - name: Install dependencies
         run: composer install --no-progress --no-suggest --prefer-dist
-
-      - name: Enable Xdebug coverage mode
-        run: echo "xdebug.mode=coverage" | sudo tee -a /etc/php/8.2/cli/conf.d/99-xdebug.ini
 
       - name: Run PHPUnit with coverage
         run: |

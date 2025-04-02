@@ -1,1 +1,1 @@
-{"version":1,"defects":[],"times":{"CalculadoraTest::testSomar":0.007,"CalculadoraTest::testSubtrair":0,"Tests\\ExampleTest::testBasicFunctionality":0.001}}
+{"version":1,"defects":[],"times":{"CalculadoraTest::testSomar":0.002,"CalculadoraTest::testSubtrair":0,"Tests\\ExampleTest::testBasicFunctionality":0}}

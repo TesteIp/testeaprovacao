@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1743617163">
-  <project timestamp="1743617163">
+<coverage generated="1743617289">
+  <project timestamp="1743617289">
     <file name="/home/joaovictor/teste/testeaprovacao/src/Calculadora.php">
       <class name="App\Calculadora" namespace="global">
         <metrics complexity="5" methods="4" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="2" elements="10" coveredelements="4"/>
