@@ -131,21 +131,12 @@ jobs:
               exit 1
           fi
 
-  request-first-approval:
+  cd:
+    name: Continuous Delivery
     needs: [tests, security]
     runs-on: ubuntu-latest
     environment:
-      name: aprovação 
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Aguardando primeira aprovação
-        run: echo "Primeira aprovação concedida por $GITHUB_ACTOR"
-
-  cd:
-    name: Continuous Delivery
-    needs: [tests, security, request-first-approval]
-    runs-on: ubuntu-latest
+      name: aprovação
     if: github.ref == 'refs/heads/main'
 
     steps:
