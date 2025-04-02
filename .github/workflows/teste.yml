@@ -48,18 +48,19 @@ jobs:
       - name: 📝 Gerar comentário da PR com resultados dos testes
         if: github.event_name == 'pull_request'
         run: |
-          PASSED_TESTS=$(grep -c "✔" test-results.txt || echo "0")
-          FAILED_TESTS=$(grep -c "✘" test-results.txt || echo "0")
-          COVERAGE=$(grep -oP '(?<=lines-valid=")[0-9]+' coverage.xml || echo "0")
-          TOTAL_LINES=$(grep -oP '(?<=lines-covered=")[0-9]+' coverage.xml || echo "1")
-          PERCENT_COVERAGE=$((COVERAGE * 100 / TOTAL_LINES))
-          
-          COMMENT="### 📊 Resultados dos Testes
-          ✅ **Testes aprovados**: $PASSED_TESTS  
-          🔴 **Testes falhados**: $FAILED_TESTS  
-          📈 **Cobertura de código**: $PERCENT_COVERAGE%  
-          [🔗 Ver detalhes no Codecov](https://app.codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})"
-          
-          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_DEV}}
+            PASSED_TESTS=$(grep -c "✔" test-results.txt || echo "0")
+            FAILED_TESTS=$(grep -c "✘" test-results.txt || echo "0")
+            COVERAGE=$(grep -oP '(?<=lines-valid=")[0-9]+' coverage.xml || echo "0")
+            TOTAL_LINES=$(grep -oP '(?<=lines-covered=")[0-9]+' coverage.xml || echo "1")
+            PERCENT_COVERAGE=$((COVERAGE * 100 / TOTAL_LINES))
+            
+            COMMENT="### 📊 Resultados dos Testes
+            ✅ **Testes aprovados**: $PASSED_TESTS  
+            🔴 **Testes falhados**: $FAILED_TESTS  
+            📈 **Cobertura de código**: $PERCENT_COVERAGE%  
+            [🔗 Ver detalhes no Codecov](https://app.codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})"
+            
+            echo "$COMMENT" | gh pr comment ${{ github.event.pull_request.number }} --body -
+          env:
+            GH_TOKEN: ${{ secrets.GITHUB_DEV }}
+  
