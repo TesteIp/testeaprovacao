@@ -3,7 +3,7 @@ name: Auto PR to dev
 on:
   pull_request:
     branches:
-      - master
+      - main
     types: [opened]
 
 jobs:
