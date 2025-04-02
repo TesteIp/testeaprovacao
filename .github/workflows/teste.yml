@@ -29,7 +29,7 @@ jobs:
         run: composer install --no-progress --no-suggest --prefer-dist
 
       - name: Enable Xdebug coverage mode
-        run: echo "xdebug.mode=coverage" >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini
+        run: echo "xdebug.mode=coverage" | sudo tee -a /etc/php/8.2/cli/conf.d/99-xdebug.ini
 
       - name: Run PHPUnit with coverage
         run: |
