@@ -32,22 +32,22 @@ jobs:
       - name: Obter resumo da cobertura e estatísticas dos testes
         id: coverage
         run: |
-          # Obter cobertura total
-          TOTAL_COVERAGE=$(grep -oP '(?<=<coverage line-rate=")[^"]*' coverage.xml | awk '{sum+=$1} END {print sum*100}')
+          # Obter cobertura total (convertendo para número inteiro válido)
+          TOTAL_COVERAGE=$(grep -oP '(?<=<coverage line-rate=")[^"]*' coverage.xml | awk '{printf "%.2f", $1 * 100}')
           
           # Obter total de testes
-          TOTAL_TESTS=$(grep -oP '(?<=tests=")[^"]*' phpunit-report.xml)
+          TOTAL_TESTS=$(grep -oP '(?<=tests=")[0-9]+' phpunit-report.xml || echo "0")
           
           # Obter número de falhas
-          FAILURES=$(grep -oP '(?<=failures=")[^"]*' phpunit-report.xml)
+          FAILURES=$(grep -oP '(?<=failures=")[0-9]+' phpunit-report.xml || echo "0")
           
           # Obter número de testes ignorados
-          SKIPPED=$(grep -oP '(?<=skipped=")[^"]*' phpunit-report.xml)
+          SKIPPED=$(grep -oP '(?<=skipped=")[0-9]+' phpunit-report.xml || echo "0")
           
-          # Obter tempo de execução
-          EXECUTION_TIME=$(grep -oP '(?<=time=")[^"]*' phpunit-report.xml)
-
-          # Exportar variáveis de ambiente
+          # Obter tempo de execução (formatando para evitar erros)
+          EXECUTION_TIME=$(grep -oP '(?<=time=")[0-9.]*' phpunit-report.xml || echo "0.000")
+          
+          # Exportar variáveis de ambiente corretamente
           echo "total_coverage=$TOTAL_COVERAGE" >> $GITHUB_ENV
           echo "total_tests=$TOTAL_TESTS" >> $GITHUB_ENV
           echo "failures=$FAILURES" >> $GITHUB_ENV
