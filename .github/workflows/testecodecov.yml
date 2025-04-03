@@ -32,27 +32,21 @@ jobs:
       - name: Obter resumo da cobertura e estatísticas dos testes
         id: coverage
         run: |
-          # Obter cobertura total (convertendo para número inteiro válido)
+          # Obter cobertura total (convertendo para número válido)
           TOTAL_COVERAGE=$(grep -oP '(?<=<coverage line-rate=")[^"]*' coverage.xml | awk '{printf "%.2f", $1 * 100}')
           
-          # Obter total de testes
+          # Garantir que valores numéricos estejam sempre presentes
           TOTAL_TESTS=$(grep -oP '(?<=tests=")[0-9]+' phpunit-report.xml || echo "0")
-          
-          # Obter número de falhas
           FAILURES=$(grep -oP '(?<=failures=")[0-9]+' phpunit-report.xml || echo "0")
-          
-          # Obter número de testes ignorados
           SKIPPED=$(grep -oP '(?<=skipped=")[0-9]+' phpunit-report.xml || echo "0")
-          
-          # Obter tempo de execução (formatando para evitar erros)
           EXECUTION_TIME=$(grep -oP '(?<=time=")[0-9.]*' phpunit-report.xml || echo "0.000")
-          
-          # Exportar variáveis de ambiente corretamente
-          echo "total_coverage=$TOTAL_COVERAGE" >> $GITHUB_ENV
-          echo "total_tests=$TOTAL_TESTS" >> $GITHUB_ENV
-          echo "failures=$FAILURES" >> $GITHUB_ENV
-          echo "skipped=$SKIPPED" >> $GITHUB_ENV
-          echo "execution_time=$EXECUTION_TIME" >> $GITHUB_ENV
+
+          # Corrigir o problema do formato ao exportar para $GITHUB_ENV
+          echo "total_coverage=${TOTAL_COVERAGE}" >> $GITHUB_ENV
+          echo "total_tests=${TOTAL_TESTS}" >> $GITHUB_ENV
+          echo "failures=${FAILURES}" >> $GITHUB_ENV
+          echo "skipped=${SKIPPED}" >> $GITHUB_ENV
+          echo "execution_time=${EXECUTION_TIME}" >> $GITHUB_ENV
 
       - name: Enviar relatório de cobertura para Codecov
         uses: codecov/codecov-action@v4
