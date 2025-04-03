@@ -1,0 +1,50 @@
+name: Code Coverage
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js (caso seja um projeto Node)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Executar testes e gerar relatório de cobertura
+        run: npm test -- --coverage
+
+      - name: Enviar cobertura para Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+
+      - name: Obter relatório do Codecov
+        run: |
+          curl -s https://codecov.io/api/v2/github/${{ github.repository_owner }}/repos/${{ github.event.repository.name }}/commits/${{ github.event.pull_request.head.sha }}/report > coverage.json
+
+      - name: Comentar resultado na PR
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            🚀 **Resultado da Cobertura de Código:**
+            ```
+            $(jq '.commit.totals' coverage.json)
+            ```
+          repo-token: ${{ secrets.DEV }}
