@@ -3,11 +3,10 @@ name: CI - Testes e Cobertura
 on:
   push:
     branches:
-      -
+      - main
   pull_request:
     branches:
-      -
-
+      - main
 
 jobs:
   tests:
@@ -28,7 +27,32 @@ jobs:
         run: composer install --no-progress --prefer-dist
 
       - name: Executar testes com PHPUnit e gerar cobertura
-        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=phpunit-report.xml | tee phpunit-output.txt
+
+      - name: Obter resumo da cobertura e estatísticas dos testes
+        id: coverage
+        run: |
+          # Obter cobertura total
+          TOTAL_COVERAGE=$(grep -oP '(?<=<coverage line-rate=")[^"]*' coverage.xml | awk '{sum+=$1} END {print sum*100}')
+          
+          # Obter total de testes
+          TOTAL_TESTS=$(grep -oP '(?<=tests=")[^"]*' phpunit-report.xml)
+          
+          # Obter número de falhas
+          FAILURES=$(grep -oP '(?<=failures=")[^"]*' phpunit-report.xml)
+          
+          # Obter número de testes ignorados
+          SKIPPED=$(grep -oP '(?<=skipped=")[^"]*' phpunit-report.xml)
+          
+          # Obter tempo de execução
+          EXECUTION_TIME=$(grep -oP '(?<=time=")[^"]*' phpunit-report.xml)
+
+          # Exportar variáveis de ambiente
+          echo "total_coverage=$TOTAL_COVERAGE" >> $GITHUB_ENV
+          echo "total_tests=$TOTAL_TESTS" >> $GITHUB_ENV
+          echo "failures=$FAILURES" >> $GITHUB_ENV
+          echo "skipped=$SKIPPED" >> $GITHUB_ENV
+          echo "execution_time=$EXECUTION_TIME" >> $GITHUB_ENV
 
       - name: Enviar relatório de cobertura para Codecov
         uses: codecov/codecov-action@v4
@@ -38,17 +62,15 @@ jobs:
           fail_ci_if_error: true
           verbose: true
 
-      - name: Obter resumo da cobertura
-        id: coverage
-        run: |
-          TOTAL_COVERAGE=$(grep -oP '(?<=<coverage line-rate=")[^"]*' coverage.xml | awk '{sum+=$1} END {print sum*100}')
-          echo "total_coverage=$TOTAL_COVERAGE" >> $GITHUB_ENV
-
-      - name: Comentar na Pull Request
+      - name: Comentar na Pull Request com os resultados do PHPUnit
         if: github.event_name == 'pull_request'
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            📊 **Cobertura de Código**
-            - Cobertura total: **${{ env.total_coverage }}%**
-          GITHUB_TOKEN: ${{ secrets.DEV }}
+            ✅ **PHPUnit Test Coverage Report**
+            - 📊 **Total Coverage:** `${{ env.total_coverage }}%`
+            - 🧪 **Total Tests:** `${{ env.total_tests }}`
+            - ❌ **Failures:** `${{ env.failures }}`
+            - ⚠️ **Skipped:** `${{ env.skipped }}`
+            - ⏱ **Execution Time:** `${{ env.execution_time }} seconds`
+          GITHUB_TOKEN: ${{ secrets.GITHUB_DEV }}
