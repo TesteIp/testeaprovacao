@@ -1,77 +1,20 @@
-name: CI - Testes e Cobertura
+name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ master ]
   pull_request:
-    branches:
-      - main
+    branches: [ master ]
 
 jobs:
-  tests:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
-      - name: Configurar o PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          coverage: xdebug
-          tools: composer:v2
-
-      - name: Instalar dependências
-        run: composer install --no-progress --prefer-dist
-
-      - name: Executar testes com PHPUnit e gerar cobertura
-        run: vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=phpunit-report.xml | tee phpunit-output.txt
-
-      - name: Obter resumo da cobertura e estatísticas dos testes
-        id: coverage
-        run: |
-          # Extraindo a cobertura total e convertendo para número
-          TOTAL_COVERAGE=$(awk -F '"' '/<coverage line-rate=/ {printf "%.2f", $2 * 100}' coverage.xml)
-          [ -z "$TOTAL_COVERAGE" ] && TOTAL_COVERAGE="0.00"
-
-          # Extraindo estatísticas dos testes
-          TOTAL_TESTS=$(awk -F '"' '/tests=/ {print $2}' phpunit-report.xml)
-          FAILURES=$(awk -F '"' '/failures=/ {print $2}' phpunit-report.xml)
-          SKIPPED=$(awk -F '"' '/skipped=/ {print $2}' phpunit-report.xml)
-          EXECUTION_TIME=$(awk -F '"' '/time=/ {print $2}' phpunit-report.xml)
-
-          # Garantir que variáveis sejam válidas (se vazias, define como 0)
-          printf -v TOTAL_TESTS "%.0f" "${TOTAL_TESTS:-0}"
-          printf -v FAILURES "%.0f" "${FAILURES:-0}"
-          printf -v SKIPPED "%.0f" "${SKIPPED:-0}"
-          printf -v EXECUTION_TIME "%.4f" "${EXECUTION_TIME:-0.0000}"
-
-          # Exportando para o GitHub Actions
-          echo "total_coverage=$TOTAL_COVERAGE" >> $GITHUB_ENV
-          echo "total_tests=$TOTAL_TESTS" >> $GITHUB_ENV
-          echo "failures=$FAILURES" >> $GITHUB_ENV
-          echo "skipped=$SKIPPED" >> $GITHUB_ENV
-          echo "execution_time=$EXECUTION_TIME" >> $GITHUB_ENV
-
-      - name: Enviar relatório de cobertura para Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.xml
-          fail_ci_if_error: true
-          verbose: true
-
-      - name: Comentar na Pull Request com os resultados do PHPUnit
-        if: github.event_name == 'pull_request'
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: |
-            ✅ **PHPUnit Test Coverage Report**
-            - 📊 **Total Coverage:** `${{ env.total_coverage }}%`
-            - 🧪 **Total Tests:** `${{ env.total_tests }}`
-            - ❌ **Failures:** `${{ env.failures }}`
-            - ⚠️ **Skipped:** `${{ env.skipped }}`
-            - ⏱ **Execution Time:** `${{ env.execution_time }} seconds`
-          GITHUB_TOKEN: ${{ secrets.GITHUB_DEV }}
+    - name: Checkout
+      uses: actions/checkout@v2 
+    - name: Build
+      run: docker build . -t app
+    - name: Run PHP unit tests
+      run:  docker run app vendor/bin/phpunit --whitelist ./src/Service --coverage-text --colors ./tests
+    - name: Run application
+      run: docker run app php ./getIp.php
